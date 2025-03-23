@@ -5,9 +5,9 @@ use crate::Result;
 use crate::ProvisionExt;
 
 #[command]
-pub(crate) async fn ping<R: Runtime>(
+pub(crate) async fn start_scan<R: Runtime>(
     app: AppHandle<R>,
-    payload: PingRequest,
-) -> Result<PingResponse> {
-    app.provision().ping(payload)
+    payload: ScanRequest,
+) -> Result<()> {
+    app.provision().start_scan(payload)
 }

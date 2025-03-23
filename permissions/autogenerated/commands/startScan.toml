@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-startScan"
+description = "Enables the startScan command without any pre-configured scope."
+commands.allow = ["startScan"]
+
+[[permission]]
+identifier = "deny-startScan"
+description = "Denies the startScan command without any pre-configured scope."
+commands.deny = ["startScan"]

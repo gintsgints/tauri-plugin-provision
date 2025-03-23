@@ -2,7 +2,7 @@
 
 Default permissions for the plugin
 
-- `allow-ping`
+- `allow-startScan`
 
 ## Permission Table
 
@@ -16,12 +16,12 @@ Default permissions for the plugin
 <tr>
 <td>
 
-`provision:allow-ping`
+`provision:allow-startScan`
 
 </td>
 <td>
 
-Enables the ping command without any pre-configured scope.
+Enables the startScan command without any pre-configured scope.
 
 </td>
 </tr>
@@ -29,12 +29,12 @@ Enables the ping command without any pre-configured scope.
 <tr>
 <td>
 
-`provision:deny-ping`
+`provision:deny-startScan`
 
 </td>
 <td>
 
-Denies the ping command without any pre-configured scope.
+Denies the startScan command without any pre-configured scope.
 
 </td>
 </tr>

@@ -14,9 +14,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct Provision<R: Runtime>(AppHandle<R>);
 
 impl<R: Runtime> Provision<R> {
-  pub fn ping(&self, payload: PingRequest) -> crate::Result<PingResponse> {
-    Ok(PingResponse {
-      value: payload.value,
-    })
+  pub fn start_scan(&self, _payload: ScanRequest) -> crate::Result<()> {
+    Ok(())
   }
 }
