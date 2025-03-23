@@ -19,6 +19,7 @@ import androidx.core.app.ActivityCompat;
 
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
+import com.espressif.provisioning.ESPDevice;
 import com.espressif.provisioning.listeners.BleScanListener;
 
 import app.tauri.plugin.Invoke;
@@ -29,12 +30,15 @@ public class ProvisionClient {
     private Activity activity;
     private ProvisionClientPlugin plugin;
     private final ESPProvisionManager provisionManager;
+    private final ESPDevice espDevice;
     private boolean isScanning = false;
 
     public ProvisionClient(Activity activity, ProvisionClientPlugin plugin) {
         this.activity = activity;
         this.plugin = plugin;
         this.provisionManager = ESPProvisionManager.getInstance(activity);
+        this.espDevice = provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_0);
+
     }
 
     public void startScan(Invoke invoke) {
@@ -47,8 +51,7 @@ public class ProvisionClient {
             return;
         }
 
-        provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_0);
-//        provisionManager.searchBleEspDevices("PROV_", bleScanListener);
+        provisionManager.searchBleEspDevices("PROV_", bleScanListener);
         invoke.resolve();
     }
 
@@ -98,6 +101,7 @@ public class ProvisionClient {
 
         @Override
         public void onPeripheralFound(BluetoothDevice device, ScanResult scanResult) {
+            Toast.makeText(activity, "Peripheral Found", Toast.LENGTH_LONG).show();
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
@@ -126,11 +130,13 @@ public class ProvisionClient {
 
         @Override
         public void scanCompleted() {
+            Toast.makeText(activity, "Scan is completed", Toast.LENGTH_SHORT).show();
             isScanning = false;
         }
 
         @Override
         public void onFailure(Exception e) {
+            Toast.makeText(activity, "Failure...!", Toast.LENGTH_SHORT).show();
             Log.e(TAG, e.getMessage());
             e.printStackTrace();
         }
