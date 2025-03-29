@@ -21,6 +21,7 @@ public class ProvisionClientPlugin extends Plugin {
     public ProvisionClientPlugin(Activity activity) {
         super(activity);
         this.provisionClient = new ProvisionClient(activity, this);
+        this.bluetoothDevices = new HashMap<>();
     }
 
     @Command

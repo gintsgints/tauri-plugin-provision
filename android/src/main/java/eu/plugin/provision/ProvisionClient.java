@@ -22,7 +22,10 @@ import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.ESPDevice;
 import com.espressif.provisioning.listeners.BleScanListener;
 
+import app.tauri.annotation.InvokeArg;
+import app.tauri.plugin.Channel;
 import app.tauri.plugin.Invoke;
+import app.tauri.plugin.JSObject;
 
 public class ProvisionClient {
     private static final String TAG = ProvisionClientPlugin.class.getSimpleName();
@@ -41,6 +44,10 @@ public class ProvisionClient {
 
     }
 
+    @InvokeArg
+    class ScanParams {
+        Channel onDevice;
+    }
     public void startScan(Invoke invoke) {
         if (isScanning) {
             invoke.reject("Scan already running");
@@ -50,6 +57,62 @@ public class ProvisionClient {
             invoke.reject("Missing permissions");
             return;
         }
+
+        isScanning = true;
+        plugin.bluetoothDevices.clear();
+
+        BleScanListener bleScanListener = new BleScanListener() {
+
+            @Override
+            public void scanStartFailed() {
+                Toast.makeText(activity, "Please turn on Bluetooth to connect BLE device", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onPeripheralFound(BluetoothDevice device, ScanResult scanResult) {
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                        Log.d(TAG, "====== onPeripheralFound ===== " + device.getName());
+                    }
+                } else {
+                    Log.d(TAG, "====== onPeripheralFound ===== " + device.getName());
+                }
+
+                boolean deviceExists = false;
+                String serviceUuid = "";
+
+                if (scanResult.getScanRecord().getServiceUuids() != null && scanResult.getScanRecord().getServiceUuids().size() > 0) {
+                    serviceUuid = scanResult.getScanRecord().getServiceUuids().get(0).toString();
+                }
+                Log.d(TAG, "Add service UUID : " + serviceUuid);
+
+                if (plugin.bluetoothDevices.containsKey(device)) {
+                    deviceExists = true;
+                }
+
+                if (!deviceExists) {
+                    Toast.makeText(activity, "Peripheral Found", Toast.LENGTH_LONG).show();
+                    plugin.bluetoothDevices.put(device, serviceUuid);
+                    // BleDevice bleDevice = new BleDevice(
+                    //         device.getAddress(), device.getName()
+                    // );
+                }
+            }
+
+            @Override
+            public void scanCompleted() {
+                Toast.makeText(activity, "Scan is completed", Toast.LENGTH_SHORT).show();
+                isScanning = false;
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(activity, "Failure...!", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, e.getMessage());
+                e.printStackTrace();
+            }
+        };
 
         provisionManager.searchBleEspDevices("PROV_", bleScanListener);
         invoke.resolve();
@@ -91,55 +154,4 @@ public class ProvisionClient {
     private boolean firstPermissionRequest(String perm) {
         return activity.getSharedPreferences(perm, MODE_PRIVATE).getBoolean(perm, true);
     }
-
-    private BleScanListener bleScanListener = new BleScanListener() {
-
-        @Override
-        public void scanStartFailed() {
-            Toast.makeText(activity, "Please turn on Bluetooth to connect BLE device", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onPeripheralFound(BluetoothDevice device, ScanResult scanResult) {
-            Toast.makeText(activity, "Peripheral Found", Toast.LENGTH_LONG).show();
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(TAG, "====== onPeripheralFound ===== " + device.getName());
-                }
-            } else {
-                Log.d(TAG, "====== onPeripheralFound ===== " + device.getName());
-            }
-
-            boolean deviceExists = false;
-            String serviceUuid = "";
-
-            if (scanResult.getScanRecord().getServiceUuids() != null && scanResult.getScanRecord().getServiceUuids().size() > 0) {
-                serviceUuid = scanResult.getScanRecord().getServiceUuids().get(0).toString();
-            }
-            Log.d(TAG, "Add service UUID : " + serviceUuid);
-
-            if (plugin.bluetoothDevices.containsKey(device)) {
-                deviceExists = true;
-            }
-
-            if (!deviceExists) {
-                plugin.bluetoothDevices.put(device, serviceUuid);
-            }
-        }
-
-        @Override
-        public void scanCompleted() {
-            Toast.makeText(activity, "Scan is completed", Toast.LENGTH_SHORT).show();
-            isScanning = false;
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            Toast.makeText(activity, "Failure...!", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, e.getMessage());
-            e.printStackTrace();
-        }
-    };
-
 }
