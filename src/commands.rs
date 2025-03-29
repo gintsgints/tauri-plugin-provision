@@ -1,6 +1,6 @@
 use tauri::{AppHandle, command, Runtime};
 
-use crate::models::*;
+use crate::models::ScanRequest;
 use crate::Result;
 use crate::ProvisionExt;
 
