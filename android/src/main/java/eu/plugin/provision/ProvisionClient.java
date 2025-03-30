@@ -22,8 +22,6 @@ import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.ESPDevice;
 import com.espressif.provisioning.listeners.BleScanListener;
 
-import app.tauri.annotation.InvokeArg;
-import app.tauri.plugin.Channel;
 import app.tauri.plugin.Invoke;
 import app.tauri.plugin.JSObject;
 
@@ -44,11 +42,7 @@ public class ProvisionClient {
 
     }
 
-    @InvokeArg
-    class ScanParams {
-        Channel onDevice;
-    }
-    public void startScan(Invoke invoke) {
+    public void startScan(Invoke invoke, ProvisionClientPlugin.OnDevice onDevice) {
         if (isScanning) {
             invoke.reject("Scan already running");
             return;
@@ -94,9 +88,10 @@ public class ProvisionClient {
                 if (!deviceExists) {
                     Toast.makeText(activity, "Peripheral Found", Toast.LENGTH_LONG).show();
                     plugin.bluetoothDevices.put(device, serviceUuid);
-                    // BleDevice bleDevice = new BleDevice(
-                    //         device.getAddress(), device.getName()
-                    // );
+                    JSObject deviceInfo = new JSObject();
+                    deviceInfo.put("name", device.getName());
+                    deviceInfo.put("address", device.getAddress());
+                    onDevice.onDevice(deviceInfo);
                 }
             }
 

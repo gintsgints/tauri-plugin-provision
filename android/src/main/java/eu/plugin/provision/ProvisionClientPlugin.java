@@ -10,13 +10,17 @@ import java.util.HashMap;
 import app.tauri.annotation.Command;
 import app.tauri.annotation.TauriPlugin;
 import app.tauri.plugin.Invoke;
-import app.tauri.plugin.JSObject;
 import app.tauri.plugin.Plugin;
+import app.tauri.plugin.JSObject;
 
 @TauriPlugin
 public class ProvisionClientPlugin extends Plugin {
     private final ProvisionClient provisionClient;
     public HashMap<BluetoothDevice, String> bluetoothDevices;
+
+    public interface OnDevice {
+        void onDevice(JSObject payload);
+    }
 
     public ProvisionClientPlugin(Activity activity) {
         super(activity);
@@ -26,6 +30,8 @@ public class ProvisionClientPlugin extends Plugin {
 
     @Command
     public void startScan(Invoke invoke) {
-        provisionClient.startScan(invoke);
+        provisionClient.startScan(invoke, (JSObject payload) -> {
+            trigger("onDevice", payload);
+        });
     }
 }
