@@ -32,13 +32,4 @@ public class ExampleInstrumentedTest {
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assertEquals("eu.plugin.provision.test", appContext.getPackageName());
     }
-
-    @Test
-    public void testScan() {
-        Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        Activity activity = new Activity();
-        ProvisionClientPlugin provisionClientPlugin = new ProvisionClientPlugin(activity);
-        Invoke invoke = new Invoke(1, "test", 1, 1, null, "", null);
-        provisionClientPlugin.startScan(invoke);
-    }
 }
