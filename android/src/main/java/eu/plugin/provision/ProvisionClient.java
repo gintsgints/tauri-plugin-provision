@@ -20,8 +20,15 @@ import androidx.core.app.ActivityCompat;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.ESPDevice;
+import com.espressif.provisioning.WiFiAccessPoint;
 import com.espressif.provisioning.listeners.BleScanListener;
+import com.espressif.provisioning.listeners.ProvisionListener;
+import com.espressif.provisioning.listeners.ResponseListener;
+import com.espressif.provisioning.listeners.WiFiScanListener;
 
+import java.util.ArrayList;
+
+import app.tauri.annotation.InvokeArg;
 import app.tauri.plugin.Invoke;
 import app.tauri.plugin.JSObject;
 
@@ -42,6 +49,96 @@ public class ProvisionClient {
 
     }
 
+    @InvokeArg
+    public static class ProvisionRequest {
+        public String address;
+        public String pop;
+        public String ssid;
+        public String password;
+
+        public ProvisionRequest() {}
+    }
+    public void wifiProvision(Invoke invoke) {
+        ProvisionRequest req = invoke.parseArgs(ProvisionRequest.class);
+
+        ProvisionListener provisionListener = new ProvisionListener() {
+            @Override
+            public void createSessionFailed(Exception e) {
+                Toast.makeText(activity, "Create session failed", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void wifiConfigSent() {
+                Toast.makeText(activity, "Wifi config sent", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void wifiConfigFailed(Exception e) {
+                Toast.makeText(activity, "wifi config failed", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void wifiConfigApplied() {
+                Toast.makeText(activity, "Wifi config applied", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void wifiConfigApplyFailed(Exception e) {
+                Toast.makeText(activity, "Device provisioning failed apply", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason failureReason) {
+                Toast.makeText(activity, "Provisioning failed from device", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void deviceProvisioningSuccess() {
+                Toast.makeText(activity, "Device provisioning success", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onProvisioningFailed(Exception e) {
+                Toast.makeText(activity, "Device provisioning failed with exception", Toast.LENGTH_SHORT).show();
+            }
+        };
+
+        BluetoothDevice device = plugin.bluetoothDevices.get(req.address);
+        provisionManager.getEspDevice().connectBLEDevice(device, req.address);
+        provisionManager.getEspDevice().setProofOfPossession(req.pop);
+        provisionManager.getEspDevice().initSession(new ResponseListener() {
+            @Override
+            public void onSuccess(byte[] returnData) {
+                ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
+                if (deviceCaps.contains(AppConstants.CAPABILITY_WIFI_SCAN)) {
+                    provisionManager.getEspDevice().scanNetworks(new WiFiScanListener() {
+                        @Override
+                        public void onWifiListReceived(ArrayList<WiFiAccessPoint> wifiList) {
+                            provisionManager.getEspDevice().provision(req.ssid, req.password, provisionListener);
+                        }
+
+                        @Override
+                        public void onWiFiScanFailed(Exception e) {
+                            Toast.makeText(activity, "Failure of scanning networks", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_SCAN)) {
+                    Toast.makeText(activity, "Thread scan not implemented", Toast.LENGTH_SHORT).show();
+                } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV)) {
+                    Toast.makeText(activity, "Thread provisioning not implemented", Toast.LENGTH_SHORT).show();
+                } else {
+                    provisionManager.getEspDevice().provision(req.ssid, req.password, provisionListener);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(activity, "Failure of provision initalization", Toast.LENGTH_SHORT).show();
+            }
+        });
+        invoke.resolve();
+    }
+
     public void startScan(Invoke invoke, ProvisionClientPlugin.OnDevice onDevice) {
         if (isScanning) {
             invoke.reject("Scan already running");
@@ -59,7 +156,9 @@ public class ProvisionClient {
 
             @Override
             public void scanStartFailed() {
-                Toast.makeText(activity, "Please turn on Bluetooth to connect BLE device", Toast.LENGTH_SHORT).show();
+                JSObject no_device = new JSObject();
+                no_device.put("error", "Scan failed. Make sure bluetooth is enabled");
+                onDevice.onDevice(no_device);
             }
 
             @Override
@@ -81,17 +180,17 @@ public class ProvisionClient {
                 }
                 Log.d(TAG, "Add service UUID : " + serviceUuid);
 
-                if (plugin.bluetoothDevices.containsKey(device)) {
+                if (plugin.bluetoothDevices.containsKey(serviceUuid)) {
                     deviceExists = true;
                 }
 
                 if (!deviceExists) {
                     Toast.makeText(activity, "Peripheral Found", Toast.LENGTH_LONG).show();
-                    plugin.bluetoothDevices.put(device, serviceUuid);
-                    JSObject deviceInfo = new JSObject();
-                    deviceInfo.put("name", device.getName());
-                    deviceInfo.put("address", device.getAddress());
-                    onDevice.onDevice(deviceInfo);
+                    plugin.bluetoothDevices.put(serviceUuid, device);
+                    plugin.foundDevice = new JSObject();
+                    plugin.foundDevice.put("name", device.getName());
+                    plugin.foundDevice.put("address", serviceUuid);
+                    plugin.foundDevice.put("error", "");
                 }
             }
 
@@ -99,13 +198,20 @@ public class ProvisionClient {
             public void scanCompleted() {
                 Toast.makeText(activity, "Scan is completed", Toast.LENGTH_SHORT).show();
                 isScanning = false;
+                if (plugin.foundDevice != null) {
+                    onDevice.onDevice(plugin.foundDevice);
+                } else {
+                    JSObject no_device = new JSObject();
+                    no_device.put("error", "No device found");
+                    onDevice.onDevice(no_device);
+                }
             }
 
             @Override
             public void onFailure(Exception e) {
-                Toast.makeText(activity, "Failure...!", Toast.LENGTH_SHORT).show();
-                Log.e(TAG, e.getMessage());
-                e.printStackTrace();
+                JSObject no_device = new JSObject();
+                no_device.put("error", "Failure scanning. Error:" + e.getMessage());
+                onDevice.onDevice(no_device);
             }
         };
 

@@ -35,7 +35,7 @@ impl<R: Runtime, T: Manager<R>> crate::ProvisionExt<R> for T {
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
   Builder::new("provision")
-    .invoke_handler(tauri::generate_handler![commands::start_scan])
+    .invoke_handler(tauri::generate_handler![commands::start_scan, commands::wifi_provision])
     .setup(|app, api| {
       #[cfg(mobile)]
       let provision = mobile::init(app, api)?;

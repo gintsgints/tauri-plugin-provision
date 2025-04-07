@@ -26,6 +26,14 @@ pub struct Provision<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> Provision<R> {
     pub fn start_scan(&self, payload: ScanRequest) -> crate::Result<()> {
-        self.0.run_mobile_plugin("startScan", payload).map_err(Into::into)
+        self.0
+            .run_mobile_plugin("startScan", payload)
+            .map_err(Into::into)
+    }
+
+    pub fn wifi_provision(&self, payload: ProvisionRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("wifiProvision", payload)
+            .map_err(Into::into)
     }
 }

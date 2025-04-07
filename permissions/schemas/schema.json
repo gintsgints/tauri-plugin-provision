@@ -295,6 +295,16 @@
       "type": "string",
       "oneOf": [
         {
+          "description": "Enables the provision command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-provision"
+        },
+        {
+          "description": "Denies the provision command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-provision"
+        },
+        {
           "description": "Enables the registerListener command without any pre-configured scope.",
           "type": "string",
           "const": "allow-registerListener"
@@ -323,6 +333,16 @@
           "description": "Denies the startScan command without any pre-configured scope.",
           "type": "string",
           "const": "deny-startScan"
+        },
+        {
+          "description": "Enables the wifiProvision command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-wifiProvision"
+        },
+        {
+          "description": "Denies the wifiProvision command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-wifiProvision"
         },
         {
           "description": "Default permissions for the plugin",

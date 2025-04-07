@@ -16,7 +16,8 @@ import app.tauri.plugin.JSObject;
 @TauriPlugin
 public class ProvisionClientPlugin extends Plugin {
     private final ProvisionClient provisionClient;
-    public HashMap<BluetoothDevice, String> bluetoothDevices;
+    public HashMap<String, BluetoothDevice> bluetoothDevices;
+    public JSObject foundDevice;
 
     public interface OnDevice {
         void onDevice(JSObject payload);
@@ -33,5 +34,10 @@ public class ProvisionClientPlugin extends Plugin {
         provisionClient.startScan(invoke, (JSObject payload) -> {
             trigger("onDevice", payload);
         });
+    }
+
+    @Command
+    public void wifiProvision(Invoke invoke) {
+        provisionClient.wifiProvision(invoke);
     }
 }

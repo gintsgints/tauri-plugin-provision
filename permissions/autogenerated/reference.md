@@ -3,6 +3,7 @@
 Default permissions for the plugin
 
 - `allow-startScan`
+- `allow-wifiProvision`
 - `allow-registerListener`
 
 ## Permission Table
@@ -13,6 +14,32 @@ Default permissions for the plugin
 <th>Description</th>
 </tr>
 
+
+<tr>
+<td>
+
+`provision:allow-provision`
+
+</td>
+<td>
+
+Enables the provision command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`provision:deny-provision`
+
+</td>
+<td>
+
+Denies the provision command without any pre-configured scope.
+
+</td>
+</tr>
 
 <tr>
 <td>
@@ -88,6 +115,32 @@ Enables the startScan command without any pre-configured scope.
 <td>
 
 Denies the startScan command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`provision:allow-wifiProvision`
+
+</td>
+<td>
+
+Enables the wifiProvision command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`provision:deny-wifiProvision`
+
+</td>
+<td>
+
+Denies the wifiProvision command without any pre-configured scope.
 
 </td>
 </tr>

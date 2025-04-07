@@ -17,4 +17,8 @@ impl<R: Runtime> Provision<R> {
   pub fn start_scan(&self, _payload: ScanRequest) -> crate::Result<()> {
     Ok(())
   }
+
+  pub fn wifi_provision(&self, _payload: ProvisionRequest) -> crate::Result<()> {
+    Ok(())
+  }
 }
