@@ -297,57 +297,68 @@
         {
           "description": "Enables the provision command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-provision"
+          "const": "allow-provision",
+          "markdownDescription": "Enables the provision command without any pre-configured scope."
         },
         {
           "description": "Denies the provision command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-provision"
+          "const": "deny-provision",
+          "markdownDescription": "Denies the provision command without any pre-configured scope."
         },
         {
           "description": "Enables the registerListener command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-registerListener"
+          "const": "allow-registerListener",
+          "markdownDescription": "Enables the registerListener command without any pre-configured scope."
         },
         {
           "description": "Denies the registerListener command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-registerListener"
+          "const": "deny-registerListener",
+          "markdownDescription": "Denies the registerListener command without any pre-configured scope."
         },
         {
           "description": "Enables the register_listener command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-register-listener"
+          "const": "allow-register-listener",
+          "markdownDescription": "Enables the register_listener command without any pre-configured scope."
         },
         {
           "description": "Denies the register_listener command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-register-listener"
+          "const": "deny-register-listener",
+          "markdownDescription": "Denies the register_listener command without any pre-configured scope."
         },
         {
           "description": "Enables the startScan command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-startScan"
+          "const": "allow-startScan",
+          "markdownDescription": "Enables the startScan command without any pre-configured scope."
         },
         {
           "description": "Denies the startScan command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-startScan"
+          "const": "deny-startScan",
+          "markdownDescription": "Denies the startScan command without any pre-configured scope."
         },
         {
           "description": "Enables the wifiProvision command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-wifiProvision"
+          "const": "allow-wifiProvision",
+          "markdownDescription": "Enables the wifiProvision command without any pre-configured scope."
         },
         {
           "description": "Denies the wifiProvision command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-wifiProvision"
+          "const": "deny-wifiProvision",
+          "markdownDescription": "Denies the wifiProvision command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-startScan`\n- `allow-wifiProvision`\n- `allow-registerListener`",
           "type": "string",
-          "const": "default"
+          "const": "default",
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-startScan`\n- `allow-wifiProvision`\n- `allow-registerListener`"
         }
       ]
     }
