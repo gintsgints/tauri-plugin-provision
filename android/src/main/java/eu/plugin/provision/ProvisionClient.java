@@ -45,8 +45,7 @@ public class ProvisionClient {
         this.activity = activity;
         this.plugin = plugin;
         this.provisionManager = ESPProvisionManager.getInstance(activity);
-        this.espDevice = provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_0);
-
+        this.espDevice = provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_1);
     }
 
     @InvokeArg
