@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
@@ -25,6 +26,14 @@ import com.espressif.provisioning.listeners.BleScanListener;
 import com.espressif.provisioning.listeners.ProvisionListener;
 import com.espressif.provisioning.listeners.ResponseListener;
 import com.espressif.provisioning.listeners.WiFiScanListener;
+import com.espressif.provisioning.DeviceConnectionEvent;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 
@@ -32,16 +41,23 @@ import app.tauri.annotation.InvokeArg;
 import app.tauri.plugin.Invoke;
 import app.tauri.plugin.JSObject;
 
+
 public class ProvisionClient {
     private static final String TAG = ProvisionClientPlugin.class.getSimpleName();
+    // Time out
+    private static final long DEVICE_CONNECT_TIMEOUT = 20000;
 
     private Activity activity;
     private ProvisionClientPlugin plugin;
     private final ESPProvisionManager provisionManager;
     private final ESPDevice espDevice;
     private boolean isScanning = false;
+    private ResponseListener listener;
+    private Handler handler;
+    private ProvisionRequest req;
 
     public ProvisionClient(Activity activity, ProvisionClientPlugin plugin) {
+        this.handler = new Handler();
         this.activity = activity;
         this.plugin = plugin;
         this.provisionManager = ESPProvisionManager.getInstance(activity);
@@ -58,7 +74,31 @@ public class ProvisionClient {
         public ProvisionRequest() {}
     }
     public void wifiProvision(Invoke invoke) {
-        ProvisionRequest req = invoke.parseArgs(ProvisionRequest.class);
+        req = invoke.parseArgs(ProvisionRequest.class);
+
+        BluetoothDevice device = plugin.bluetoothDevices.get(req.address);
+        this.espDevice.connectBLEDevice(device, req.address);
+        handler.postDelayed(disconnectDeviceTask, DEVICE_CONNECT_TIMEOUT);
+        invoke.resolve();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEvent(DeviceConnectionEvent event) {
+        String protoVerStr = espDevice.getVersionInfo();
+        try {
+            JSONObject jsonObject = new JSONObject(protoVerStr);
+            JSONObject provInfo = jsonObject.getJSONObject("prov");
+            if (provInfo.has("sec_ver")) {
+                int serVer = provInfo.optInt("sec_ver");
+                if (serVer == 1) {
+                    espDevice.setSecurityType(ESPConstants.SecurityType.SECURITY_1);
+                }
+            }
+        } catch (JSONException e) {
+            Toast.makeText(activity, "Capabilities JSON not available.", Toast.LENGTH_SHORT).show();
+        }
+
+        this.espDevice.setProofOfPossession(req.pop);
 
         ProvisionListener provisionListener = new ProvisionListener() {
             @Override
@@ -102,18 +142,15 @@ public class ProvisionClient {
             }
         };
 
-        BluetoothDevice device = plugin.bluetoothDevices.get(req.address);
-        provisionManager.getEspDevice().connectBLEDevice(device, req.address);
-        provisionManager.getEspDevice().setProofOfPossession(req.pop);
-        provisionManager.getEspDevice().initSession(new ResponseListener() {
+        listener = new ResponseListener() {
             @Override
             public void onSuccess(byte[] returnData) {
-                ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
+                ArrayList<String> deviceCaps = espDevice.getDeviceCapabilities();
                 if (deviceCaps.contains(AppConstants.CAPABILITY_WIFI_SCAN)) {
-                    provisionManager.getEspDevice().scanNetworks(new WiFiScanListener() {
+                    espDevice.scanNetworks(new WiFiScanListener() {
                         @Override
                         public void onWifiListReceived(ArrayList<WiFiAccessPoint> wifiList) {
-                            provisionManager.getEspDevice().provision(req.ssid, req.password, provisionListener);
+                            espDevice.provision(req.ssid, req.password, provisionListener);
                         }
 
                         @Override
@@ -126,7 +163,7 @@ public class ProvisionClient {
                 } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV)) {
                     Toast.makeText(activity, "Thread provisioning not implemented", Toast.LENGTH_SHORT).show();
                 } else {
-                    provisionManager.getEspDevice().provision(req.ssid, req.password, provisionListener);
+                    espDevice.provision(req.ssid, req.password, provisionListener);
                 }
             }
 
@@ -134,8 +171,8 @@ public class ProvisionClient {
             public void onFailure(Exception e) {
                 Toast.makeText(activity, "Failure of provision initalization", Toast.LENGTH_SHORT).show();
             }
-        });
-        invoke.resolve();
+        };
+        this.espDevice.initSession(listener);
     }
 
     public void startScan(Invoke invoke, ProvisionClientPlugin.OnDevice onDevice) {
@@ -254,4 +291,11 @@ public class ProvisionClient {
     private boolean firstPermissionRequest(String perm) {
         return activity.getSharedPreferences(perm, MODE_PRIVATE).getBoolean(perm, true);
     }
+
+    private Runnable disconnectDeviceTask = new Runnable() {
+        @Override
+        public void run() {
+            Log.e(TAG, "Disconnect device");
+        }
+    };
 }
