@@ -62,6 +62,7 @@ public class ProvisionClient {
         this.plugin = plugin;
         this.provisionManager = ESPProvisionManager.getInstance(activity);
         this.espDevice = provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_1);
+        EventBus.getDefault().register(this);
     }
 
     @InvokeArg
@@ -75,7 +76,6 @@ public class ProvisionClient {
     }
     public void wifiProvision(Invoke invoke) {
         req = invoke.parseArgs(ProvisionRequest.class);
-
         BluetoothDevice device = plugin.bluetoothDevices.get(req.address);
         this.espDevice.connectBLEDevice(device, req.address);
         handler.postDelayed(disconnectDeviceTask, DEVICE_CONNECT_TIMEOUT);
@@ -100,48 +100,6 @@ public class ProvisionClient {
 
         this.espDevice.setProofOfPossession(req.pop);
 
-        ProvisionListener provisionListener = new ProvisionListener() {
-            @Override
-            public void createSessionFailed(Exception e) {
-                Toast.makeText(activity, "Create session failed", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void wifiConfigSent() {
-                Toast.makeText(activity, "Wifi config sent", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void wifiConfigFailed(Exception e) {
-                Toast.makeText(activity, "wifi config failed", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void wifiConfigApplied() {
-                Toast.makeText(activity, "Wifi config applied", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void wifiConfigApplyFailed(Exception e) {
-                Toast.makeText(activity, "Device provisioning failed apply", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason failureReason) {
-                Toast.makeText(activity, "Provisioning failed from device", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void deviceProvisioningSuccess() {
-                Toast.makeText(activity, "Device provisioning success", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onProvisioningFailed(Exception e) {
-                Toast.makeText(activity, "Device provisioning failed with exception", Toast.LENGTH_SHORT).show();
-            }
-        };
-
         listener = new ResponseListener() {
             @Override
             public void onSuccess(byte[] returnData) {
@@ -150,7 +108,7 @@ public class ProvisionClient {
                     espDevice.scanNetworks(new WiFiScanListener() {
                         @Override
                         public void onWifiListReceived(ArrayList<WiFiAccessPoint> wifiList) {
-                            espDevice.provision(req.ssid, req.password, provisionListener);
+                            espDevice.provision(req.ssid, req.password, null);
                         }
 
                         @Override
@@ -163,7 +121,45 @@ public class ProvisionClient {
                 } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV)) {
                     Toast.makeText(activity, "Thread provisioning not implemented", Toast.LENGTH_SHORT).show();
                 } else {
-                    espDevice.provision(req.ssid, req.password, provisionListener);
+                    espDevice.provision(req.ssid, req.password, new ProvisionListener() {
+                        @Override
+                        public void createSessionFailed(Exception e) {
+                            Toast.makeText(activity, "Create session failed", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void wifiConfigSent() {
+                        }
+
+                        @Override
+                        public void wifiConfigFailed(Exception e) {
+                        }
+
+                        @Override
+                        public void wifiConfigApplied() {
+                            Toast.makeText(activity, "Wifi config applied", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void wifiConfigApplyFailed(Exception e) {
+                            Toast.makeText(activity, "Device provisioning failed apply", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason failureReason) {
+                            Toast.makeText(activity, "Provisioning failed from device", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void deviceProvisioningSuccess() {
+                            Toast.makeText(activity, "Device provisioning success", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void onProvisioningFailed(Exception e) {
+                            Toast.makeText(activity, "Device provisioning failed with exception", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             }
 
