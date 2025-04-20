@@ -16,6 +16,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
 import com.espressif.provisioning.ESPConstants;
@@ -158,6 +159,7 @@ public class ProvisionClient {
                         @Override
                         public void onProvisioningFailed(Exception e) {
                             Toast.makeText(activity, "Device provisioning failed with exception", Toast.LENGTH_SHORT).show();
+                            throw new RuntimeException("Device provisioning failed with exception", e);
                         }
                     });
                 }
@@ -165,7 +167,7 @@ public class ProvisionClient {
 
             @Override
             public void onFailure(Exception e) {
-                Toast.makeText(activity, "Failure of provision initalization", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Failure of provision initalization: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         };
         this.espDevice.initSession(listener);
@@ -251,27 +253,35 @@ public class ProvisionClient {
         invoke.resolve();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.S)
     private boolean checkPermissions() {
-        String [] permissions = { Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT };
+        String [] permissions = {
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_ADMIN,
+//                Manifest.permission.ACCESS_FINE_LOCATION,
+//                ,
+//                Manifest.permission.ACCESS_WIFI_STATE,
+//                Manifest.permission.CHANGE_WIFI_STATE,
+        };
 
         for (String perm: permissions ) {
             if (ActivityCompat.checkSelfPermission(activity, perm) != PackageManager.PERMISSION_GRANTED) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (firstPermissionRequest(perm) || activity.shouldShowRequestPermissionRationale(perm)) {
-                        // this will open the permission dialog
-                        markFirstPermissionRequest(perm);
-                        activity.requestPermissions(permissions, 1);
-                        return false;
-                    } else{
-                        // this will open settings which asks for permission
-                        Intent intent = new Intent(
-                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                Uri.parse("package:${activity.packageName}")
-                        );
-                        activity.startActivity(intent);
-                        Toast.makeText(activity, "Allow Permission: $perm", Toast.LENGTH_SHORT).show();
-                        return false;
-                    }
+                if (firstPermissionRequest(perm) || activity.shouldShowRequestPermissionRationale(perm)) {
+                    // this will open the permission dialog
+                    markFirstPermissionRequest(perm);
+                    activity.requestPermissions(permissions, 1);
+                    return false;
+                } else{
+                    // this will open settings which asks for permission
+                    Intent intent = new Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:${activity.packageName}")
+                    );
+                    activity.startActivity(intent);
+                    Toast.makeText(activity, "Allow Permission: $perm", Toast.LENGTH_SHORT).show();
+                    return false;
                 }
             }
         }
