@@ -167,9 +167,11 @@ public class ProvisionClient {
 
             @Override
             public void onFailure(Exception e) {
+                Log.e(TAG, "Failure of provision initialization", e);
                 Toast.makeText(activity, "Failure of provision initalization: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         };
+        Log.d(TAG, "Start session initialization.");
         this.espDevice.initSession(listener);
     }
 
@@ -178,9 +180,11 @@ public class ProvisionClient {
             invoke.reject("Scan already running");
             return;
         }
-        if (!checkPermissions()){
-            invoke.reject("Missing permissions");
-            return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!checkPermissions()){
+                invoke.reject("Missing permissions");
+                return;
+            }
         }
 
         isScanning = true;
